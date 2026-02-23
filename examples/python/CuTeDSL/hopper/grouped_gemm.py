@@ -192,10 +192,12 @@ class HopperWgmmaGroupedGemmKernel:
             barrier_id=1, num_threads=self.num_mma_threads
         )
         # Barrier signalling tensormap A/B initialisation is complete.
-        # Participants: all MMA threads (producers) + 1 DMA warp (consumer).
+        # Participants: all MMA threads (producers) + DMA warp 0 only (consumer).
+        # Only warp 0 of the DMA warp group calls arrive_and_wait; the other
+        # 3 DMA warps never arrive, so count must be num_mma_threads + 32.
         self.tensormap_ab_init_barrier = pipeline.NamedBarrier(
             barrier_id=2,
-            num_threads=self.num_mma_threads + self.num_threads_per_warp_group,
+            num_threads=self.num_mma_threads + 32,
         )
 
         self.ab_stage = None
