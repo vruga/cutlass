@@ -590,6 +590,8 @@ class HopperWgmmaGroupedGemmKernel:
         is_dma_warp_group = warp_group_idx < self.num_dma_warp_groups
         if is_dma_warp_group:
             cute.arch.setmaxregister_decrease(self.load_register_requirement)
+        else:
+            cute.arch.setmaxregister_increase(self.mma_register_requirement)
 
         # ── Per-SM tensormap workspace ────────────────────────────────────────
         bid = cute.arch.block_idx()
@@ -770,8 +772,6 @@ class HopperWgmmaGroupedGemmKernel:
         # MMA warp groups: WGMMA compute + epilogue + tensormap C updates
         # =====================================================================
         if not is_dma_warp_group and initial_work_tile_info.is_valid_tile:
-            cute.arch.setmaxregister_increase(self.mma_register_requirement)
-
             # Initialise tensormaps A/B when delegated (SMEM mode).
             if cutlass.const_expr(self.delegate_tensormap_ab_init):
                 tensormap_manager.init_tensormap_from_atom(
